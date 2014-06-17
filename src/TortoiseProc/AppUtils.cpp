@@ -2187,6 +2187,20 @@ bool CAppUtils::Pull(bool showPush)
 	dlg.m_IsPull = TRUE;
 	if (dlg.DoModal() == IDOK)
 	{
+		CString error;
+		DWORD exitcode = 0xFFFFFFFF;
+		if (CHooks::Instance().PrePull(g_Git.m_CurrentDir, exitcode, error))
+		{
+			if (exitcode)
+			{
+				CString temp;
+				temp.Format(IDS_ERR_HOOKFAILED, (LPCTSTR)error);
+				//ReportError(temp);
+				CMessageBox::Show(NULL, temp, _T("TortoiseGit"), MB_OK | MB_ICONERROR);
+				return false;
+			}
+		}
+
 		CString url = dlg.m_RemoteURL;
 
 		if (dlg.m_bAutoLoad)
@@ -2243,6 +2257,20 @@ bool CAppUtils::Pull(bool showPush)
 		INT_PTR smUpdateButton = gitPath.HasSubmodules() ? progress.m_PostCmdList.Add(CString(MAKEINTRESOURCE(IDS_PROC_SUBMODULESUPDATE))) + IDC_PROGRESS_BUTTON1 : -1;
 
 		INT_PTR ret = progress.DoModal();
+
+		error.Empty();
+		exitcode = 0xFFFFFFFF;
+		if (CHooks::Instance().PostPull(g_Git.m_CurrentDir, exitcode, error))
+		{
+			if (exitcode)
+			{
+				CString temp;
+				temp.Format(IDS_ERR_HOOKFAILED, (LPCTSTR)error);
+				//ReportError(temp);
+				CMessageBox::Show(NULL, temp, _T("TortoiseGit"), MB_OK | MB_ICONERROR);
+				return false;
+			}
+		}
 
 		if (ret == IDOK && progress.m_GitStatus == 1 && progress.m_LogText.Find(_T("CONFLICT")) >= 0 && CMessageBox::Show(NULL, IDS_SEECHANGES, IDS_APPNAME, MB_YESNO | MB_ICONINFORMATION) == IDYES)
 		{
@@ -2463,21 +2491,22 @@ bool CAppUtils::Push(CString selectLocalBranch)
 {
 	CPushDlg dlg;
 	dlg.m_BranchSourceName = selectLocalBranch;
-	CString error;
-	DWORD exitcode = 0xFFFFFFFF;
-	if (CHooks::Instance().PrePush(g_Git.m_CurrentDir, exitcode, error))
-	{
-		if (exitcode)
-		{
-			CString temp;
-			temp.Format(IDS_ERR_HOOKFAILED, (LPCTSTR)error);
-			CMessageBox::Show(NULL,temp,_T("TortoiseGit"),MB_OK|MB_ICONERROR);
-			return false;
-		}
-	}
 
-	if(dlg.DoModal()==IDOK)
+	if (dlg.DoModal() == IDOK)
 	{
+		CString error;
+		DWORD exitcode = 0xFFFFFFFF;
+		if (CHooks::Instance().PrePush(g_Git.m_CurrentDir, exitcode, error))
+		{
+			if (exitcode)
+			{
+				CString temp;
+				temp.Format(IDS_ERR_HOOKFAILED, (LPCTSTR)error);
+				CMessageBox::Show(NULL, temp, _T("TortoiseGit"), MB_OK | MB_ICONERROR);
+				return false;
+			}
+		}
+
 		CString arg;
 
 		if(dlg.m_bPack)
@@ -2558,20 +2587,21 @@ bool CAppUtils::Push(CString selectLocalBranch)
 
 		INT_PTR ret = progress.DoModal();
 
-		if(!progress.m_GitStatus)
+		exitcode = 0xFFFFFFFF;
+		error.Empty();
+		if (CHooks::Instance().PostPush(g_Git.m_CurrentDir, exitcode, error))
 		{
-			exitcode = 0xFFFFFFFF;
-			error.Empty();
-			if (CHooks::Instance().PostPush(g_Git.m_CurrentDir, exitcode, error))
+			if (exitcode)
 			{
-				if (exitcode)
-				{
-					CString temp;
-					temp.Format(IDS_ERR_HOOKFAILED, (LPCTSTR)error);
-					CMessageBox::Show(NULL,temp,_T("TortoiseGit"),MB_OK|MB_ICONERROR);
-					return false;
-				}
+				CString temp;
+				temp.Format(IDS_ERR_HOOKFAILED, (LPCTSTR)error);
+				CMessageBox::Show(NULL, temp, _T("TortoiseGit"), MB_OK | MB_ICONERROR);
+				return false;
 			}
+		}
+
+		if (!progress.m_GitStatus)
+		{
 			if(ret == IDC_PROGRESS_BUTTON1)
 			{
 				RequestPull(dlg.m_BranchRemoteName);

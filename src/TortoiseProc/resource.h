@@ -1119,8 +1119,10 @@
 #define IDS_SORTTAGSREVERSED_TT         1519
 #define IDC_AUTOTEXTCONTENT             1520
 #define IDC_CHECK_TRACK                 1520
+#define IDS_HOOKTYPE_PREPULL            1520
 #define IDC_AUTOTEXTREGEX               1521
 #define IDC_CHECK_FORCE                 1521
+#define IDS_HOOKTYPE_POSTPULL           1521
 #define IDC_AUTOTEXTSCAN                1522
 #define IDC_GROUP_BASEON                1522
 #define IDC_TESTRESULT                  1523

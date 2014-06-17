@@ -4440,6 +4440,12 @@ BEGIN
     IDS_SORTTAGSREVERSED_TT "When enabled, larger version numbers come first. It is because latest versions are usually more useful."
 END
 
+STRINGTABLE
+BEGIN
+    IDS_HOOKTYPE_PREPULL    "Pre-pull hook"
+    IDS_HOOKTYPE_POSTPULL   "Post-pull hook"
+END
+
 #endif    // English (U.S.) resources
 /////////////////////////////////////////////////////////////////////////////
 

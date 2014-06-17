@@ -188,6 +188,19 @@ void CSyncDlg::OnBnClickedButtonPull()
 		CString remotebranch;
 		remotebranch = m_strRemoteBranch;
 
+		CString error;
+		DWORD exitcode = 0xFFFFFFFF;
+		if (CHooks::Instance().PrePull(g_Git.m_CurrentDir, exitcode, error))
+		{
+			if (exitcode)
+			{
+				CString temp;
+				temp.Format(IDS_ERR_HOOKFAILED, (LPCTSTR)error);
+				CMessageBox::Show(NULL, temp, _T("TortoiseGit"), MB_OK | MB_ICONERROR);
+				return;
+			}
+		}
+
 		if(!IsURL())
 		{
 			CString pullRemote, pullBranch;
@@ -346,6 +359,19 @@ void CSyncDlg::PullComplete()
 	CGitHash newhash;
 	if (g_Git.GetHash(newhash, _T("HEAD")))
 		MessageBox(g_Git.GetGitLastErr(_T("Could not get HEAD hash after pulling.")), _T("TortoiseGit"), MB_ICONERROR);
+
+	CString error;
+	DWORD exitcode = 0xFFFFFFFF;
+	if (CHooks::Instance().PostPull(g_Git.m_CurrentDir, exitcode, error))
+	{
+		if (exitcode)
+		{
+			CString temp;
+			temp.Format(IDS_ERR_HOOKFAILED, (LPCTSTR)error);
+			CMessageBox::Show(NULL, temp, _T("TortoiseGit"), MB_OK | MB_ICONERROR);
+			return;
+		}
+	}
 
 	if( this ->m_GitCmdStatus )
 	{
@@ -1383,22 +1409,19 @@ void CSyncDlg::RunPostAction()
 
 	if (this->m_CurrentCmd == GIT_COMMAND_PUSH)
 	{
-		if (!m_GitCmdStatus)
+		DWORD exitcode = 0xFFFFFFFF;
+		CString error;
+		if (CHooks::Instance().PostPush(g_Git.m_CurrentDir, exitcode, error))
 		{
-			DWORD exitcode = 0xFFFFFFFF;
-			CString error;
-			if (CHooks::Instance().PostPush(g_Git.m_CurrentDir, exitcode, error))
+			if (exitcode)
 			{
-				if (exitcode)
-				{
-					CString temp;
-					temp.Format(IDS_ERR_HOOKFAILED, (LPCTSTR)error);
-					CMessageBox::Show(NULL,temp,_T("TortoiseGit"),MB_OK|MB_ICONERROR);
-					return;
-				}
+				CString temp;
+				temp.Format(IDS_ERR_HOOKFAILED, (LPCTSTR)error);
+				CMessageBox::Show(NULL,temp,_T("TortoiseGit"),MB_OK|MB_ICONERROR);
+				return;
 			}
-
 		}
+
 		EnableControlButton(true);
 		SwitchToInput();
 		this->FetchOutList(true);
